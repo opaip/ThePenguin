@@ -55,3 +55,5 @@ engine.compute([100.0, 0.0]) # 100W Heat from Sun
 ​This is v1.0 (Static Solver). I'm currently working on:
 ​MNA (Modified Nodal Analysis): Adding support for voltage sources and fixed constraints.
 ​Transient Analysis: Adding capacitors/thermal mass to simulate time-based behavior.
+
+🐧 coded with love - torture and lots of confusion:))
