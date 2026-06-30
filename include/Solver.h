@@ -3,65 +3,75 @@
 
 #include "Topology.h"
 #include "MathUtils.h"
+#include <iostream>
 
 class Solver {
+private:
     NetworkManager* net;
     int system_size;
-    
+    Scalar current_time;
+
+
 public:
-    Solver(NetworkManager* network) : net(network), system_size(0) {}
+    Solver(NetworkManager* network) : net(network), system_size(0), current_time(0.0) {}
 
-   
-    void assign_indices() {
-        system_size = 0;
-        for (auto& pair : net->nodes) {
-            if (!pair.second.is_reference) {
-                pair.second.matrix_index = system_size;
-                system_size++;
-            } else {
-                pair.second.matrix_index = -1;
-            }
-        }
+	
+	
+    Matrix calculate_C(Scalar dt) {
+        int m = net->components.size();
+        Matrix C(m, Vector(m, 0.0)); 
+        
+        for(int i = 0; i < m; i++) {
+           
+            C[i][i] = net->components[i]->get_constitutive_value(dt);
+        }  
+        return C;
     }
 
-   
-    Vector compute(Vector inputs) {
-        assign_indices();
-        
-        
-        Matrix G(system_size, Vector(system_size, 0.0));
-
-       
-        for (auto& r : net->resistors) {
-            int idx_a = net->nodes[r.node_a].matrix_index;
-            int idx_b = net->nodes[r.node_b].matrix_index;
-            Scalar g = r.get_conductance();
-
-            if (idx_a != -1) G[idx_a][idx_a] += g;
-            if (idx_b != -1) G[idx_b][idx_b] += g;
-            
-            if (idx_a != -1 && idx_b != -1) {
-                G[idx_a][idx_b] -= g;
-                G[idx_b][idx_a] -= g;
-            }
-        }
-
-       
-        return MathUtils::solve_linear_system(G, inputs);
-    }
     
-    void print_results(Vector potentials) {
-        std::cout << "\n--- Results ---\n";
-        int i = 0;
-        for (auto const& [id, node] : net->nodes) {
-            if (!node.is_reference) {
-                std::cout << "Node " << id << ": " << potentials[i] << " V\n";
-                i++;
-            } else {
-                std::cout << "Node " << id << ": 0.0000 V (Ref)\n";
-            }
+    Vector calculate_y_hist(Scalar dt) {
+        int m = net->components.size();
+        Vector y(m, 0.0);
+        
+        for(int i = 0; i < m; i++) {
+            y[i] = net->components[i]->get_history_source(dt);
         }
+        return y;
     }
+	
+	
+
+	
+	Vector step(Scalar dt, Vector f_external) {
+        
+        Matrix A = net->calculate_A();
+        
+        
+        Matrix C = calculate_C(dt);
+        Vector y_hist = calculate_y_hist(dt);
+
+        
+        Matrix A_T = MathUtils::transpose(A);
+        Matrix G = MathUtils::multiply(A_T, MathUtils::multiply(C, A));
+    	Vector f_hist = MathUtils::multiply(A_T, y_hist);
+        
+        
+        Vector b = MathUtils::add(f_external, f_hist);
+
+        
+        Vector x = MathUtils::solve_linear_system(G, b);
+
+        
+        Vector e = MathUtils::multiply(A,x);
+        for(int i=0;i<net->components.size();i++){
+			net->components[i]->update_history(e[i]);
+		}
+
+        current_time += dt;
+        return x;
+    }
+	
+	
 };
 
 #endif
