@@ -27,32 +27,50 @@ Where $\mathbf{G}$ is the Conductance Matrix, $\mathbf{x}$ is the Potentials vec
 ## Usage
 
 ### 1. Circuit Example (Wheatstone Bridge)
-```python
-from Topology import NetworkManager
-from PhysicsEngine import Solver
 
-circuit = NetworkManager()
-# Add resistors (Link between node 1 and 2 with R=10)
-circuit.add_link(1, 2, 10.0) 
-circuit.add_link(2, 0, 5.0)  # 0 is Ground
+```cpp
+#include <iostream>
+#include <iomanip>
+#include "Solver.h"
 
-engine = Solver(circuit)
-engine.compute([2.0, 0.0]) # Inject 2A at Node 1
-```
+int main() {
+    std::cout << "--- Project Penguin: Dynamic Physics Engine ---\n";
 
-### 2. Thermal Example (CanSat Chassis)
-```python
-# Modeling heat flow in a satellite structure
-satellite = NetworkManager()
-satellite.add_link(1, 2, 0.5) # Heat path
-satellite.add_link(2, 0, 10.0) # Radiation to space
+    // 1. Initialize the topology manager
+    NetworkManager my_system;
 
-engine = Solver(satellite)
-engine.compute([100.0, 0.0]) # 100W Heat from Sun
+    // 2. Build the network structure (Node A, Node B, Parameter Value)
+    my_system.add_link(1, 2, 2.0);      // Conductive link (e.g., 2.0 Ohm Resistor)
+    my_system.add_storage(2, 0, 0.5);   // Storage element (e.g., 0.5 Farad Capacitor connected to Ground)
+
+    // 3. Initialize the Mathematical Solver Engine
+    Solver engine(&my_system);
+
+    // 4. Define simulation parameters
+    Scalar dt = 0.1;                    // Time step (delta t) = 0.1 seconds
+    Vector external_flux = {10.0, 0.0}; // Steady 10-unit flow injected into Node 1
+
+    std::cout << std::setw(10) << "Time(s)" 
+              << std::setw(15) << "Node 1 Potential" 
+              << std::setw(15) << "Node 2 Potential" << "\n";
+    std::cout << "---------------------------------------------\n";
+
+    // 5. Run transient time-stepping loop (10 steps = 1.0 second)
+    for (int step_idx = 1; step_idx <= 10; step_idx++) {
+        Vector potentials = engine.step(dt, external_flux);
+        
+        std::cout << std::fixed << std::setprecision(2)
+                  << std::setw(10) << (step_idx * dt)
+                  << std::setw(15) << potentials[0]
+                  << std::setw(15) << potentials[1] << "\n";
+    }
+
+    return 0;
+}
 ```
 
 ## Future Plans (Roadmap)
-​This is v1.0 (Static Solver). I'm currently working on:
+​This is v1.1 (Dynamic Solver). I'm currently working on:
 ​MNA (Modified Nodal Analysis): Adding support for voltage sources and fixed constraints.
 ​Transient Analysis: Adding capacitors/thermal mass to simulate time-based behavior.
 
