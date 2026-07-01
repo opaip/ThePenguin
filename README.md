@@ -15,7 +15,6 @@ It builds the Laplacian Matrix for the network and solves for the equilibrium st
 
 ## Features
 * **Multi-Domain:** Works for Circuits, Heat transfer, etc.
-* **Pure Python:** No heavy dependencies, just `numpy` for matrix math.
 * **Readable Code:** Designed to be studied and extended (part of my learning roadmap for Complex Systems).
 
 ## The Math
