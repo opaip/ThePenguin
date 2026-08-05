@@ -31,7 +31,7 @@ public :
     bool type;  
     
     
-    Source(int n1, int n2, Scalar v, bool t) : Component(n1, n2, v), type(t) {}
+    Source(int n1, int n2, Scalar v, bool t) : Component(n1, n2, v), type(t) {} // 0:potential , 1:current
     
     Scalar get_constitutive_value(Scalar dt) override {
         return 0.0;
