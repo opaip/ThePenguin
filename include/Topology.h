@@ -1,3 +1,4 @@
+#ifndef TOPOLOGY_H
 #define TOPOLOGY_H
 
 #include <map>
@@ -9,6 +10,11 @@ class NetworkManager {
 public:
     std::map<int, Node> nodes;  
     std::vector<Component*> components;
+    std::vector<Source*> sources;
+    int vsrc{0};
+    int n_nodes{0};
+    
+	
     
     NetworkManager() {
         nodes[0] = Node(0, true);
@@ -23,6 +29,14 @@ public:
         ensure_nodes(n1, n2);
         components.push_back(new Storage(n1, n2, capacity));
     }
+    
+    void add_source(int n1,int n2, Scalar value,bool type)// 0:potential , 1:current
+    {
+    	ensure_nodes(n1, n2);
+    	if(type==0) vsrc++;
+    	sources.push_back((new Source(n1,n2,value,type)));
+    	
+	}
 
     void ensure_nodes(int n1, int n2) {
         if (nodes.find(n1) == nodes.end()) nodes[n1] = Node(n1);
@@ -31,19 +45,20 @@ public:
     
     Matrix calculate_A() {
         int m = components.size();
-        int n = 0;
+        
         
        
         for(auto& [id, node] : nodes) {
             if (!node.is_reference) {
-                node.matrix_index = n;
-                n++;
+                node.matrix_index = n_nodes;
+                n_nodes++;
             } else {
                 node.matrix_index = -1;
             }
         }
         
-        Matrix A(m, Vector(n, 0.0));
+        Matrix A(m, Vector(n_nodes, 0.0));
+        
         
        
         for(int i = 0; i < m; i++) {
@@ -62,6 +77,11 @@ public:
             delete c;
         }
         components.clear();
+        
+        for (auto s : sources) {
+            delete s;
+        }
+        sources.clear();
     }
 };
 
